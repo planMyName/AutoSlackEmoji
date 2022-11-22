@@ -10,17 +10,22 @@ namespace AutoSlackEmojiWeb.Pages
         private readonly IHostEnvironment _environment;
         private readonly IFileRepository _fileRepository;
         private readonly IConfiguration _configuration;
+        private readonly ISlackClient _slackClient;
 
-        public IndexModel(ILogger<IndexModel> logger, IHostEnvironment environment, IFileRepository fileRepository, IConfiguration configuration)
+        public IndexModel(ILogger<IndexModel> logger, IHostEnvironment environment, IFileRepository fileRepository, IConfiguration configuration, ISlackClient slackClient)
         {
             _logger = logger;
             _environment = environment;
             _fileRepository = fileRepository;
             _configuration = configuration;
+            _slackClient = slackClient;
         }
 
         [BindProperty]
         public IFormFile UploadContent { get; set; }
+
+        [BindProperty]
+        public string EmojiName { get; set; }
 
         public async Task OnPostAsync()
         {
@@ -29,8 +34,15 @@ namespace AutoSlackEmojiWeb.Pages
                 var file = Path.Combine(_environment.ContentRootPath, "uploads", UploadContent.FileName);
                 using (var memoryStream = new MemoryStream())
                 {
+                    // receive file
                     await UploadContent.CopyToAsync(memoryStream);
-                    await _fileRepository.AddFileAsync(memoryStream, UploadContent.FileName, _configuration["aws_bucket_name"] ?? "happyday");
+                    // process image
+                    
+                    // upload post process result to S3
+                    var preSignedFileUrl = await _fileRepository.AddFileAsync(memoryStream, EmojiName, _configuration["aws_bucket_name"] ?? "happyday");
+
+                    // add emoji to slack
+                    await _slackClient.AddEmojiAsync(EmojiName, preSignedFileUrl);
                 }
 
             }
