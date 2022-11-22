@@ -1,0 +1,15 @@
+*.dotCover
+*.bak
+*.cache
+*.log
+*.obj
+*.suo
+.vs/
+output
+src/*/bin
+src/*/obj
+src/*/*/bin
+src/*/*/obj
+bin/*
+tests/*/bin
+tests/*/obj
